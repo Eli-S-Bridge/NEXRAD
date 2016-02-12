@@ -1,18 +1,19 @@
-###Install packages if necessary.
-install.packages("plyr")
-install.packages("sp")
-install.packages("maptools")
-install.packages("raster")
-install.packages("grDevices")
-install.packages("rgdal")
-install.packages("rgeos")
-install.packages("gdata")
-install.packages("reshape")
-install.packages("cleangeo")
-install.packages("zoom") #not needed for model, but usefull for examining plots
-install.packages("ncdf4")
-install.packages("tidyr")
-install.packages("stringr")     # packages should all be installed
+# ###Install packages if necessary.
+# install.packages("plyr")
+# install.packages("sp")
+# install.packages("maptools")
+# install.packages("raster")
+# install.packages("grDevices")
+# install.packages("rgdal")
+# install.packages("rgeos")
+# install.packages("gdata")
+# install.packages("reshape")
+# install.packages("cleangeo")
+# install.packages("zoom") #not needed for model, but usefull for examining plots
+# install.packages("ncdf4")
+# install.packages("tidyr")
+# install.packages("data.table")
+# install.packages("stringr")     # packages should all be installed
 
 #Configure AWS. 
 #Open a shell (Tools -> shell)
@@ -21,14 +22,14 @@ install.packages("stringr")     # packages should all be installed
 
 library(ncdf4)
 library(stringr)
-
+library(data.table)
 ## date loops ##
 ## June has 30 days
 ## July and August have 31  
 
 
 
-## specify file of interest
+## specify where data will be stored
 sweeps = data.frame()
 
 
@@ -37,16 +38,13 @@ Radar = "KFWS"
 #for (y in 2013:2015){}
 Year = 2014
 
-for (m in 6:8){
-  Month = m  
+for (Month in 6:8){
   
-  for (d in 1:3){
-    Day = d
+  for (Day in 1:3){
     
     times = c(seq(103000,106000,700),seq(110000,116000,700),seq(120000,126000,700))
     
-    for (t in times){
-      Time = t
+    for (Time in times){
       
       ## format date-time accordingly
       Time <- str_pad(Time, 6, pad = "0")
@@ -83,7 +81,7 @@ for (m in 6:8){
       #### Get file ####
       download.file(fpath, destfile = fname1)                 # download file
       system(paste("gunzip", fname1))                         # unzip radar file
-      ncdftxt <- system(paste("java -classpath toolsUI-4.6.jar ucar.nc2.FileWriter -in", fname2, "-out", fname3), intern=TRUE)
+      ncdftxt <- system(paste("java -classpath /home/rstudio/toolsUI-4.6.jar ucar.nc2.FileWriter -in", fname2, "-out", fname3), intern=TRUE)
       ncdf1 <- nc_open(fname3)                                # name ncdf file
       
       #### Get variables ####
