@@ -95,7 +95,6 @@ CC_length <- length(azimuthR_HI)
       ####################################### the grab #####################################################################################
       ######################################################################################################################################
       
-      
      # if ("elevationR_HI" %in% names(ncdf1$var)==T){ #does this ever fail???
 
           
@@ -115,6 +114,7 @@ CC_length <- length(azimuthR_HI)
           Reflectivity_HI = Reflectivity_HI[order(Reflectivity_HI$azimuthR_HI),]      #sort data by azimuth
           Reflectivity_HI$azimuth = sort(rep(seq(0.5,360,360/CC_length),length(unique(Reflectivity_HI$distanceR_HI))),decreasing = FALSE) #replace actual azimuths with rounded values.
 
+          Reflectivity_HI <- Reflectivity_HI[order(Reflectivity_HI[,1], Reflectivity_HI[,5]),]
 
 #Draw polygons for x and y of voxels:
           
@@ -131,8 +131,6 @@ library(snow)
 library(aspace)
 library(abind)          
           
-      
-
 #set working directory to landcover
 #setwd("/data/landcover")
 site <- read.csv("nexrad_site_list_with_utm.csv") #NEXRAD data file
@@ -173,7 +171,8 @@ plist <- list(NULL) #empty list to hold data
 # div <- seq_len(abs(360))
 # factors <- div[360 %% div == 0L]
 
-for (e in scans){
+# for (e in scans){
+e = 0.5
   #adjust the ranges to account for beam angle (matters verly little for low scans)
   print(paste("elevation ", e))
   ranges <- seq(from = minrange, to = maxrange, by = 250)
@@ -185,13 +184,99 @@ for (e in scans){
   
   circsx <- circsy <- matrix(NA, ncol = nrings, nrow = CC_length+1)
   
+
+
+  CC_length = 720
+  
+  cxa1 <- NULL
+  cxa2 <- NULL
+  cya1 <- NULL
+  cya2 <- NULL
+  
   #loop through each bin.
   for(c in 1:nrings) { 
     circ <- circles(p=coords, d=adj_ranges[c], lonlat=T, n=CC_length, dissolve=T)
     cxy <- circ@polygons@polygons[[1]]@Polygons[[1]]@coords
-    circsx[,c] <- cxy[,1]
-    circsy[,c] <- cxy[,2]
+    cxy <- cxy[1:CC_length,]
+    cxy <- rbind(cxy[-1,], cxy[1,])
+    cx1 <- cxy[,1]
+    cx2 <- c(cx1[-1],cx1[1])
+    cxa1 <- c(cxa1, cx1)
+    cxa2 <- c(cxa2, cx2)
+    
+    cy1 <- cxy[,2]
+    cy2 <- c(cy1[-1],cy1[1])
+    cya1 <- c(cya1, cy1)
+    cya2 <- c(cya2, cy2)
+#     circsx[,c] <- cxy[,1]
+#     circsy[,c] <- cxy[,2]
   }
+  
+  cxa3 <- c(cxa2[-(1:CC_length)], cxa2[1:CC_length])
+  cxa4 <- c(cxa1[-(1:CC_length)], cxa1[1:CC_length])
+  cirx <- data.frame(cx1=cxa1, cx2=cxa2, cx3=cxa3, cx4=cxa4, cx5=cxa1)
+  cirx <- cirx[1:(nrow(cirx)-CC_length),]#Remove the last set of coordinates (which loop back onto the inner circle)
+  
+  cya3 <- c(cya2[-(1:CC_length)], cya2[1:CC_length])
+  cya4 <- c(cya1[-(1:CC_length)], cya1[1:CC_length])
+  ciry <- data.frame(cy1=cya1, cy2=cya2, cy3=cya3, cy4=cya4, cy5=cya1)
+  ciry <- ciry[1:(nrow(ciry)-CC_length),]
+  
+  cirall <- cbind(cirx, ciry)
+  
+  cirsub <- cirall[1:10000,]
+  
+  plst <- apply(cirsub, MARGIN = 1, FUN = function(x) Polygons(list(Polygon(matrix(x ,ncol = 2))), ID = paste(x[1],x[2],sep ="x")))
+
+  SPs <- SpatialPolygons(plst)
+  
+  subRef<-Reflectivity_HI[1:length(SPs),]
+  IDs <- sapply(slot(SPs, "polygons"), function(x) slot(x, "ID"))
+  row.names(subRef) <- IDs
+  SPDF <- SpatialPolygonsDataFrame(Sr = SPs, data = subRef)
+  
+  
+  
+  SPs = SpatialPolygons(list(Ps1))
+  
+  
+  test <- data.frame(x=c(26,21,20),y=c(34,29,28))
+  test^(1/row(test))
+  apply( cbind(1:(dim(test)[1]), test), 1, function(x) plot(x[-1], main=x[1]) )
+  
+  
+  mat <- matrix(c(1, 2, 3, 4), 2, 2)
+  matrix(mapply(function(x, i, j) x + i + j, mat, ))
+  matrix(mapply(function(x, i, j) x + i + j, mat, row(mat), col(mat)))
+  matrix(mapply(function(x, i, j) x + 10*i + 100*j, mat, row(mat), col(mat)), nrow = nrow(mat))
+  
+  test <- data.frame(x=c(26,21,20),y=c(34,29,28))
+  t(sapply(1:nrow(test), function(i) test[i,]^(1/i)))
+  
+  
+  rownames(cirall)
+  rownames(cirall[1,])
+  
+  
+  
+  matrix(cirall[1,],ncol = 2)
+  
+  spl <- list(NULL)
+  
+  
+  dlply()
+  
+  for(i in 1:nrow(cirx)) {
+  c1 = cbind(t(cirx[i,]), t(ciry[i,]))
+
+  P1 = Polygon(c1)
+  Ps1 = Polygons(list(P1), ID = i)
+  spl[i] <- Ps1
+  }
+  
+  SPs = SpatialPolygons(spl)
+  plot(SPs)
+  
   
   circsx2 <- cbind(circsx[,-1], circsx[,1])    #shift the matrixes to position the x coordinates for each shape above each other in an array.
   circsx3 <- rbind(circsx2[-1,], circsx2[1,])
@@ -208,6 +293,12 @@ for (e in scans){
   circsya <- abind(circsy,circsy2,circsy3,circsy4,circsy5, along = 3)
   
   circsa <- abind(circsx,circsx2,circsx3,circsx4,circsx5,circsy,circsy2,circsy3,circsy4,circsy5, along = 3)
+  
+  ts1 <- rep(1:length(circsx), 5)
+  mx <- matrix(circsxa, )
+  
+  length(circsx)
+  
   
   tst <- (alply(circsxa,c(1,2)), 
   
