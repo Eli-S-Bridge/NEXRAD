@@ -74,8 +74,9 @@ getRadNCDF <- function(fname){
     download.file(fpath, destfile = fname1)                 # download file
     system(paste("gunzip", fname1))                         # unzip radar file
   }
+  #You have to maker sure java is installed and that you have this toolsUI thing in an appropriate directory
   ncdftxt <- system(paste("java -classpath /home/rstudio/toolsUI-4.6.jar ucar.nc2.FileWriter -in", fname2, "-out", fname3), intern=TRUE)
-  ncdf1 <- nc_open(fname3) # name ncdf file
+  ncdf1 <- nc_open(fname3, write = T) # name ncdf file
   return(ncdf1)
 }
 
@@ -83,7 +84,7 @@ extractScan <- function(ncdf1, rangegates, mindist, maxdist, scan, Radar) {
   #### Get variables ####
   refvars <- c("Reflectivity", "distanceR", "elevationR", "azimuthR")
   varlist <- nc.get.variable.list(ncdf1, min.dims = 1)
-  if(any(varlist=="Reflectivity_HI")) refvars <- paste(refvars, "HI", sep="_")
+  if(scan < 1.75 & any(varlist=="Reflectivity_HI")) refvars <- paste(refvars, "HI", sep="_")
   
   reflectivity <- ncvar_get(ncdf1, refvars[1])              # assign reflectivity to a vector
   rangegates <- min(dim(reflectivity)[1], rangegates)
@@ -190,5 +191,8 @@ NEXRast <- function(Ref, rastext, Rastres, Radar, hole = T) {
   refRast[refRast[,] == -99] <- NA
   return(refRast)
 }
+
+
+
 
 

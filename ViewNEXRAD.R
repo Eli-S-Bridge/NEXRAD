@@ -8,7 +8,7 @@ Radar = "KMOB"
 Year = 2015
 Month = 8
 Day = 31
-Time = 112650
+Time = 124000
 
 Time <- str_pad(Time, 6, pad = "0")
 Month <- str_pad(Month, 2, pad = "0")
